@@ -1,0 +1,166 @@
+openapi: 3.0.3
+info:
+  title: Go Authentication Template
+  version: 1.0.0
+  description: >-
+    go-auth-template is a project containing an auth module and a simple web service
+    to demonstrate how it is integrated.
+    
+    Some useful links:
+
+    - [An example repository](https://github.com/mkestner/go-auth-template)
+
+    - [The source API definition for the Finis Web Service](https://github.com/mkestner/go-auth-template/blob/main/openapi.yaml)
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+tags:
+  - name: auth
+    description: User Registration and Authentication
+  - name: protected
+    description: Authorized endpoints
+paths:
+  /auth/register:
+    post:
+      tags:
+        - auth
+      summary: Register a new user
+      description: Create a new user with an email and password
+      operationId: registerUser
+      requestBody:
+        description: Credentials for a new user account in the service
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+        required: true
+      responses:
+        '201':
+          description: Successful registration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Credentials'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/login:
+    post:
+      tags:
+        - auth
+      summary: Log in a user
+      description: Authenticates a user with email and password
+      operationId: loginUser
+      requestBody:
+        description: Credentials previously registered for the user
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+        required: true
+      responses:
+        '200':
+          description: Successful authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/refresh:
+    post:
+      tags:
+        - auth
+      summary: Invoke a token refresh for a user
+      description: >-
+        Use a refresh token to obtain a new access token for a user.
+
+        Note: refresh tokens are single use. Attempts to reuse a refresh token will 
+        result in all tokens derived from it to be invalidated.
+      operationId: refreshUser
+      requestBody:
+        description: A refresh token obtained during a previous login or refresh
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+                  example: A jwt token
+        required: true
+      responses:
+        '200':
+          description: Successful refresh
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /protected:
+    get:
+      tags:
+        - protected
+      summary: An endpoint which requires an access token
+      description: Returns OK when a valid token is provided.
+      operationId: protectedRoute
+      responses:
+        '200':
+          description: Successfully authorized request.
+        '401':
+          description: Unable to authenticate the user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - jwt: []
+components:
+  schemas:
+    Credentials:
+      required:
+        - email
+        - password
+      type: object
+      properties:
+        email:
+          type: string
+          example: user@example.com
+        password:
+          type: string
+          example: 8orMoreChars
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: error description
+    TokenResponse:
+      type: object
+      properties:
+        user_id:
+          type: string
+          example: hex value
+        access_token:
+          type: string
+          example: jwt token value
+        refresh_token:
+          type: string
+          example: jwt token value
+  securitySchemes:
+    jwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
