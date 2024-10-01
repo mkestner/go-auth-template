@@ -9,12 +9,15 @@ import (
 
 func main() {
 	// Connect to the database
-	db, err := connectMongoDB()
+	client, err := connectMongoDB()
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Disconnect(context.TODO())
+	defer client.Disconnect(context.TODO())
 
-	router := CreateRouter(mongoDBProvider{database: db.Database(os.Getenv("DB_NAME"))})
+	db := client.Database(os.Getenv("DB_NAME"))
+	provider := mongoDBProvider{database: db}
+
+	router := CreateRouter(provider)
 	log.Fatal(http.ListenAndServe(":8080", router))
 }

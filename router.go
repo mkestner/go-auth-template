@@ -16,18 +16,18 @@ func CreateRouter(db auth.Provider) *http.ServeMux {
 	router.HandleFunc("POST /auth/refresh", auth.RefreshUser(db))
 
 	// set up a protected route handler using the Middleware proxy
-	router.HandleFunc("GET /protected", auth.Middleware(protectedRoute()))
+	router.HandleFunc("GET /protected", auth.Middleware(protected()))
 
 	return router
 }
 
 // Simple route handler that pulls the user information out of the context
 // and returns 200. Demonstrates the auth module middleware.
-func protectedRoute() http.HandlerFunc {
+func protected() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// pull the user information out of the context
 		user := auth.GetUser(r.Context())
-		log.Print("/protected route reached with user information: ", user)
+		log.Print("/protected route reached: ", user)
 
 		// return 200
 		w.WriteHeader(http.StatusOK)
